@@ -13,7 +13,6 @@
 #ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
-#include <glad/glad.h>
 #include <cglm/cglm.h>
 
 #include "texture.h"

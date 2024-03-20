@@ -13,6 +13,7 @@ void Game_Object(GameObject* game_object, vec2 pos, vec2 size, vec2 velocity, ve
 	game_object->Color[1] = color[1];
 	game_object->Color[2] = color[2];
 	game_object->Sprite = sprite;
+	game_object->Destroyed = false;
 
 }
 

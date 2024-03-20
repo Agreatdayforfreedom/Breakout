@@ -16,7 +16,7 @@ Shader LoadShader(ResourceManager* self, unsigned int name)
     }
     else if (name == 2) {
         printf("COMPILING POSTPROCESSING SHADER\n");
-        shader = loadPostProcesingShader();
+        shader = loadPostProcessingShader();
     }
 
 
@@ -136,7 +136,7 @@ Shader loadParticleShader() {
     return shader;
 }
 
-Shader loadPostProcesingShader() {
+Shader loadPostProcessingShader() {
     
     char* vertexCode = "#version 330 core\n"
         "layout(location = 0) in vec4 vertex;\n"

@@ -1,6 +1,4 @@
 #include "game_level.h"
-#include "resource_manager.h"
-#include <string.h>
 
 
 void Load(GameLevel* self, ResourceManager* RM, const char* file, unsigned int levelWidth, unsigned int levelHeight) {

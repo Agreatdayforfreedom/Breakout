@@ -1,7 +1,6 @@
 #include <math.h>
 #include "game.h"
 #include "sprite_renderer.h"
-#include "resource_manager.h"
 #include "shader.h"
 #include "texture.h"
 #include "game_level.h"
@@ -10,11 +9,11 @@
 #include "particle_generator.h"
 
 // Initial size of the player paddle
-const vec2 PLAYER_SIZE = { 100.0f, 20.0f };
-// Initial velocity of the player paddle
-const float PLAYER_VELOCITY = 500.0f;
-float ShakeTime = 0.0f;
 
+// Initial velocity of the player paddle
+float ShakeTime = 0.0f;
+const vec2 PLAYER_SIZE = { 100.0f, 20.0f };
+const float PLAYER_VELOCITY = 500.0f;
 GameObject Player;
 
 void ConfigGame(Game* self, unsigned int width, unsigned int height)
@@ -61,6 +60,13 @@ void Init(Game* self)
     LoadTexture(&RM, "C:/Users/Poe/Downloads/block_solid.png", false, 3);
     LoadTexture(&RM, "C:/Users/Poe/Downloads/paddle.png", true, 4);
     LoadTexture(&RM, "C:/Users/Poe/Downloads/particle.png", true, 5);
+    LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_speed.png", true, 6);
+    LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_sticky.png", true, 7);
+    LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_increase.png", true, 8);
+    LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_confuse.png", true, 9);
+    LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_chaos.png", true, 10);
+    LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_passthrough.png", true, 11);
+
 
     Post_Processor(&Effects, GetShader(&RM, 2), self->width, self->height);
 
@@ -98,6 +104,7 @@ void Update(Game* self, float dt)
 {
     Move(&ball, dt, self->width);
     Update_Particles(&particles, dt, &ball, 2, (vec2){ ball.Radius / 2.0f });
+    UpdatePowerUps(self, dt);
     if (ShakeTime > 0.0f)
     {
         ShakeTime -= dt;
@@ -120,9 +127,18 @@ void Render(Game* self)
     Draw_GameObject(&Player, &spriteRenderer);
     Draw_GameObject(&ball, &spriteRenderer);
     //TODO
-    /*for (PowerUp& powerUp : this->PowerUps)
-        if (!powerUp.Destroyed)
-            powerUp.Draw(*Renderer);*/
+
+    for (unsigned int i = 0; i < 6; i++)
+    {
+        PowerUp powerUp = self->powerUps[i];
+        // 
+        //if (powerUp != NULL) {
+        if (!powerUp.inherit.Destroyed) {
+            Draw_GameObject(&powerUp, &spriteRenderer);
+        }
+        //}
+
+    }
 
     EndRender(&Effects);
     RenderPP(&Effects, glfwGetTime());
@@ -165,31 +181,32 @@ void SpawnPowerUps(Game* self, GameObject* block)
     PowerUp powerUp;
     if (ShouldSpawn(75)) {
         
-        new_PowerUp(&powerUp, "speed", (vec3){ 0.5f, 0.5f, 1.0f }, 0.0f, block->Position, tex_speed);
-            self->powerUps[0] = powerUp;
-    }
-    if (ShouldSpawn(75)) {
-        new_PowerUp(&powerUp, "sticky", (vec3) { 1.0f, 0.5f, 1.0f }, 20.0f, block->Position, tex_sticky);
+        new_PowerUp(&powerUp, "speed", (vec3){ 0.5f, 0.5f, 1.0f }, 0.0f, block->Position, GetTexture(&RM, 6));
+        printf("speed: &texture: %i\n x: % f, y : % f\n", powerUp.inherit.Sprite.ID, powerUp.inherit.Position[0], powerUp.inherit.Position[1]);
         self->powerUps[0] = powerUp;
     }
+   if (ShouldSpawn(75)) {
+        new_PowerUp(&powerUp, "sticky", (vec3) { 1.0f, 0.5f, 1.0f }, 20.0f, block->Position, GetTexture(&RM, 7));
+        self->powerUps[1] = powerUp;
+    }
     if (ShouldSpawn(75)) {
-        new_PowerUp(&powerUp, "pass-through", (vec3) { 0.5f, 1.0f, 0.5f }, 10.0f, block->Position, tex_pass);
-        self->powerUps[0] = powerUp;
+        new_PowerUp(&powerUp, "pass-through", (vec3) { 0.5f, 1.0f, 0.5f }, 10.0f, block->Position, GetTexture(&RM, 8));
+        self->powerUps[2] = powerUp;
         
     }
     if (ShouldSpawn(75)) {
-        new_PowerUp(&powerUp, "pad-size-increase", (vec3) { 1.0f, 0.6f, 0.4 }, 0.0f, block->Position, tex_size);
-        self->powerUps[0] = powerUp;
-        
-    }
-    if (ShouldSpawn(15)) {
-        new_PowerUp(&powerUp, "confuse", (vec3) { 1.0f, 0.3f, 0.3f }, 15.0f, block->Position, tex_confuse);
-        self->powerUps[0] = powerUp;
+        new_PowerUp(&powerUp, "pad-size-increase", (vec3) { 1.0f, 0.6f, 0.4 }, 0.0f, block->Position, GetTexture(&RM, 9));
+        self->powerUps[3] = powerUp;
         
     }
     if (ShouldSpawn(15)) {
-        new_PowerUp(&powerUp, "chaos", (vec3) { 0.9f, 0.25f, 0.25f }, 15.0f, block->Position, tex_chaos);
-        self->powerUps[0] = powerUp;
+        new_PowerUp(&powerUp, "confuse", (vec3) { 1.0f, 0.3f, 0.3f }, 15.0f, block->Position, GetTexture(&RM, 10));
+        self->powerUps[4] = powerUp;
+        
+    }
+    if (ShouldSpawn(15)) {
+        new_PowerUp(&powerUp, "chaos", (vec3) { 0.9f, 0.25f, 0.25f }, 15.0f, block->Position, GetTexture(&RM, 11));
+        self->powerUps[5] = powerUp;
     }
 }
 
@@ -197,18 +214,21 @@ void UpdatePowerUps(Game* self, float dt)
 {
     for (unsigned int i = 0; i < 6; i++)
     {
-        PowerUp powerUp = self->powerUps[i];
-        glm_vec2_add(powerUp.inherit.Position, powerUp.inherit.Velocity, powerUp.inherit.Position);
-        if (powerUp.Activated)
-        {
-            powerUp.Duration -= dt;
+        PowerUp* powerUp = &self->powerUps[i];
+        //printf("%f, vel<\n", powerUp.inherit.Velocity[1]);
 
-            if (powerUp.Duration <= 0.0f)
+        powerUp->inherit.Position[0] += powerUp->inherit.Velocity[0] * dt;
+        powerUp->inherit.Position[1] += powerUp->inherit.Velocity[1] * dt;
+        
+        if (powerUp->Activated)
+        {
+            powerUp->Duration -= dt;
+            if (powerUp->Duration <= 0.0f)
             {
                 // remove powerup from list (will later be removed)
-                powerUp.Activated = false;
+                powerUp->Activated = false;
                 // deactivate effects
-                if (powerUp.Type == "sticky")
+                if (powerUp->Type == "sticky")
                 {
                     if (!isOtherPowerUpActive(self->powerUps, "sticky"))
                     {	// only reset if no other PowerUp of type sticky is active
@@ -216,23 +236,22 @@ void UpdatePowerUps(Game* self, float dt)
                         glm_vec3_copy((vec3) {1.0f,1.0f,1.0f}, Player.Color);
                     }
                 }
-                else if (powerUp.Type == "pass-through")
+                else if (powerUp->Type == "pass-through")
                 {
                     if (!isOtherPowerUpActive(self->powerUps, "pass-through"))
                     {	// only reset if no other PowerUp of type pass-through is active
-
                         ball.PassThrough = false;
                         glm_vec3_copy((vec3) { 1.0f, 1.0f, 1.0f }, ball.inherit.Color);
                     }
                 }
-                else if (powerUp.Type == "confuse")
+                else if (powerUp->Type == "confuse")
                 {
                     if (!isOtherPowerUpActive(self->powerUps, "confuse"))
                     {	// only reset if no other PowerUp of type confuse is active
                         Effects.Confuse = false;
                     }
                 }
-                else if (powerUp.Type == "chaos")
+                else if (powerUp->Type == "chaos")
                 {
                     if (!isOtherPowerUpActive(self->powerUps, "chaos"))
                     {	// only reset if no other PowerUp of type chaos is active
@@ -326,7 +345,7 @@ void DoCollisions(Game*self)
         {
             if (powerUp.inherit.Position[1] >= self->height)
                 powerUp.inherit.Destroyed = true;
-            if (CheckCollision(&Player, &powerUp))
+            if (CheckCollision_AABB(&Player, &powerUp))
             {	// collided with player, now activate powerup
                 ActivatePowerUp(&powerUp);
                 powerUp.inherit.Destroyed = true;
@@ -341,6 +360,7 @@ void ActivatePowerUp(PowerUp* powerUp)
 {
     if (powerUp->Type == "speed")
     {
+        printf("ACTIVATING\n");
         ball.inherit.Velocity[0] *= 1.2;
         ball.inherit.Velocity[1] *= 1.2;
     }
@@ -370,7 +390,7 @@ void ActivatePowerUp(PowerUp* powerUp)
     }
 }
 
-bool IsOtherPowerUpActive(PowerUp powerUps[], char* type)
+bool isOtherPowerUpActive(PowerUp powerUps[], char* type)
 {
     //TODO
     /*for (const PowerUp& powerUp : powerUps)
@@ -380,6 +400,7 @@ bool IsOtherPowerUpActive(PowerUp powerUps[], char* type)
                 return true;
     }
     return false;*/
+    return false;
 }
 
 Direction VectorDirection(vec2 target)
@@ -406,7 +427,19 @@ Direction VectorDirection(vec2 target)
     return (Direction)best_match;
 }
 
-Collision CheckCollision(Ball *one, GameObject *two) // AABB - AABB collision
+bool CheckCollision_AABB(GameObject* one, GameObject* two) // AABB - AABB collision
+{
+    // collision x-axis?
+    bool collisionX = one->Position[0] + one->Size[0] >= two->Position[0] &&
+        two->Position[0] + two->Size[0] >= one->Position[0];
+    // collision y-axis?
+    bool collisionY = one->Position[1] + one->Size[1] >= two->Position[1] &&
+        two->Position[1] + two->Size[1] >= one->Position[1];
+    // collision only if on both axes
+    return collisionX && collisionY;
+}
+
+Collision CheckCollision(Ball *one, GameObject *two) 
 {
     //todo
     //vec2 center = { one->inherit.Position[0] + one->Radius, one->inherit.Position[1] + one->Radius };;
@@ -455,8 +488,6 @@ Collision CheckCollision(Ball *one, GameObject *two) // AABB - AABB collision
     }
     return collision;
     
-
-     //collision x-axis?
    
 }
 

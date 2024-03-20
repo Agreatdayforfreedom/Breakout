@@ -4,8 +4,6 @@
 #define RESOURCE_MANAGER_H
 #include <stdio.h>
 
-#include <glad/glad.h>
-
 #include "texture.h"
 #include "shader.h"
 
@@ -27,6 +25,6 @@ Texture2D GetTexture(ResourceManager* self, const char* name);
 void      Clear(ResourceManager* self);
 
 Shader loadParticleShader();
-Shader loadPostProcesingShader();
+Shader loadPostProcessingShader();
 
 #endif

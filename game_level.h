@@ -7,7 +7,6 @@
 
 #include "game_object.h"
 #include "resource_manager.h"
-//#include "spriteRenderer.h"
 
 typedef struct {
     GameObject Bricks[8*15];

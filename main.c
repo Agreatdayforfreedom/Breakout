@@ -6,7 +6,6 @@
 #include <cglm/cglm.h>
 #include <math.h>
 #include "game.h"
-#include "resource_manager.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);

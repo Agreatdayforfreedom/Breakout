@@ -16,6 +16,12 @@
 #include <GLFW/glfw3.h>
 #include "game_level.h"
 #include "power_up.h"
+#include "resource_manager.h"
+
+#include "ball.h"
+#include "game_object.h"
+
+
 
 // Represents the current state of the game
 typedef enum {
@@ -46,10 +52,11 @@ typedef struct {
     vec2 dv;
 } Collision;
 Collision CheckCollision(Ball* one, GameObject* two);
+bool CheckCollision_AABB(GameObject* one, GameObject* two);
 Direction VectorDirection(vec2 target);
 void ActivatePowerUp(PowerUp* powerUp);
 void UpdatePowerUps(Game* self, float dt);
-bool IsOtherPowerUpActive(PowerUp powerUps[], char* type);
+bool isOtherPowerUpActive(PowerUp powerUps[], char* type);
 
 
 void ConfigGame(Game* self, unsigned int width, unsigned int height);
@@ -59,6 +66,5 @@ void ProcessInput(Game* self, float dt);
 void Update(Game* self, float dt);
 void Render(Game* self);
 void SpawnPowerUps(GameObject* block);
-void UpdatePowerUps(float dt);
 
 #endif
