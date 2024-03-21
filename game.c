@@ -1,3 +1,4 @@
+#include <irrKlang/irrKlang.h>
 #include <math.h>
 #include "game.h"
 #include "sprite_renderer.h"
@@ -190,13 +191,13 @@ void SpawnPowerUps(Game* self, GameObject* block)
         self->powerUps[1] = powerUp;
     }
     if (ShouldSpawn(75)) {
-        new_PowerUp(&powerUp, "pass-through", (vec3) { 0.5f, 1.0f, 0.5f }, 10.0f, block->Position, GetTexture(&RM, 8));
-        self->powerUps[2] = powerUp;
         
-    }
-    if (ShouldSpawn(75)) {
         new_PowerUp(&powerUp, "pad-size-increase", (vec3) { 1.0f, 0.6f, 0.4 }, 0.0f, block->Position, GetTexture(&RM, 9));
         self->powerUps[3] = powerUp;
+    }
+    if (ShouldSpawn(75)) {
+        new_PowerUp(&powerUp, "pass-through", (vec3) { 0.5f, 1.0f, 0.5f }, 10.0f, block->Position, GetTexture(&RM, 8));
+        self->powerUps[2] = powerUp;
         
     }
     if (ShouldSpawn(15)) {
@@ -340,16 +341,17 @@ void DoCollisions(Game*self)
 
     for (unsigned int i = 0; i < 6; i++)
     {
-        PowerUp powerUp = self->powerUps[i];
-        if (!powerUp.inherit.Destroyed)
+        PowerUp* powerUp = &self->powerUps[i];
+        if (!powerUp->inherit.Destroyed)
         {
-            if (powerUp.inherit.Position[1] >= self->height)
-                powerUp.inherit.Destroyed = true;
-            if (CheckCollision_AABB(&Player, &powerUp))
+            if (powerUp->inherit.Position[1] >= self->height)
+                powerUp->inherit.Destroyed = true;
+            if (CheckCollision_AABB(&Player, powerUp))
             {	// collided with player, now activate powerup
-                ActivatePowerUp(&powerUp);
-                powerUp.inherit.Destroyed = true;
-                powerUp.Activated = true;
+                ActivatePowerUp(powerUp);
+                powerUp->inherit.Destroyed = true;
+
+                powerUp->Activated = true;
             }
         }
     }
@@ -360,9 +362,8 @@ void ActivatePowerUp(PowerUp* powerUp)
 {
     if (powerUp->Type == "speed")
     {
-        printf("ACTIVATING\n");
-        ball.inherit.Velocity[0] *= 1.2;
-        ball.inherit.Velocity[1] *= 1.2;
+        ball.inherit.Velocity[0] *= 1.2f;
+        ball.inherit.Velocity[1] *= 1.2f;
     }
     else if (powerUp->Type == "sticky")
     {
@@ -376,7 +377,7 @@ void ActivatePowerUp(PowerUp* powerUp)
     }
     else if (powerUp->Type == "pad-size-increase")
     {
-        Player.Size[0] += 50;
+        Player.Size[0] += 50.0f;
     }
     else if (powerUp->Type == "confuse")
     {
@@ -393,13 +394,13 @@ void ActivatePowerUp(PowerUp* powerUp)
 bool isOtherPowerUpActive(PowerUp powerUps[], char* type)
 {
     //TODO
-    /*for (const PowerUp& powerUp : powerUps)
+    for (unsigned int i = 0; i < 6; i++)
     {
-        if (powerUp.Activated)
-            if (powerUp.Type == type)
+        PowerUp* powerUp = &powerUps[i];
+        if (powerUp->Activated)
+            if (powerUp->Type == type)
                 return true;
     }
-    return false;*/
     return false;
 }
 
