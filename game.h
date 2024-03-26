@@ -44,6 +44,7 @@ typedef struct {
     GameLevel levels[4];
     unsigned int level;
     PowerUp powerUps[6];
+    unsigned int Lives;
 } Game;
 
 typedef struct {
@@ -58,6 +59,8 @@ void ActivatePowerUp(PowerUp* powerUp);
 void UpdatePowerUps(Game* self, float dt);
 bool isOtherPowerUpActive(PowerUp powerUps[], char* type);
 
+void ResetPlayer(Game* self);
+void ResetLevel(Game* self);
 
 void ConfigGame(Game* self, unsigned int width, unsigned int height);
 void Init(Game* self);

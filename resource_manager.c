@@ -2,7 +2,7 @@
 #include "C:\Users\Poe\Downloads\stb_image.h"
 #include <stdlib.h>
 
-
+Shader loadTextRendererShader();
 Shader LoadShader(ResourceManager* self, unsigned int name)
 {
     Shader shader = loadShaderFromFile(&self);
@@ -17,6 +17,10 @@ Shader LoadShader(ResourceManager* self, unsigned int name)
     else if (name == 2) {
         printf("COMPILING POSTPROCESSING SHADER\n");
         shader = loadPostProcessingShader();
+    }
+    else if (name == 3) {
+        printf("COMPILING TEXT SHADER\n");
+        shader = loadTextRendererShader();
     }
 
 
@@ -218,6 +222,36 @@ Shader loadPostProcessingShader() {
         "{\n"
             "color = texture(scene, TexCoords);\n"
         "}\n"
+    "}\n";
+
+    Shader shader;
+
+    compile(&shader, vertexCode, fragmentCode, NULL);
+
+    return shader;
+}
+
+Shader loadTextRendererShader() {
+    
+    const char* vertexCode = "#version 330 core\n"
+    "layout(location = 0) in vec4 vertex;\n" // <vec2 pos, vec2 tex>
+    "out vec2 TexCoords;\n"
+    "uniform mat4 projection;\n"
+    "void main()\n"
+    "{\n"
+       "gl_Position = projection * vec4(vertex.xy, 0.0, 1.0);\n"
+        "TexCoords = vertex.zw;\n"
+    "}\n";
+
+    const char* fragmentCode = "#version 330 core\n"
+        "in vec2 TexCoords;\n"
+    "out vec4 color;\n"
+    "uniform sampler2D text;\n"
+    "uniform vec3 textColor;\n"
+    "void main()\n"
+    "{\n"
+        "vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);\n"
+        "color = vec4(textColor, 1.0) * sampled;\n"
     "}\n";
 
     Shader shader;

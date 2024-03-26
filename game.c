@@ -1,5 +1,6 @@
-#include <irrKlang/irrKlang.h>
 #include <math.h>
+#include <string.h>
+#include <stdio.h>
 #include "game.h"
 #include "sprite_renderer.h"
 #include "shader.h"
@@ -8,8 +9,7 @@
 #include "post_processor.h"
 #include "ball.h"
 #include "particle_generator.h"
-
-// Initial size of the player paddle
+#include "text_renderer.h"
 
 // Initial velocity of the player paddle
 float ShakeTime = 0.0f;
@@ -32,6 +32,7 @@ Shader texture;
 Ball ball;
 ParticleGenerator particles;
 PostProcessor Effects;
+TextRenderer Text;
 
 const vec2 INITIAL_BALL_VELOCITY = { 100.0f, -350.0f };
 const float BALL_RADIUS = 12.5f;
@@ -68,7 +69,8 @@ void Init(Game* self)
     LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_chaos.png", true, 10);
     LoadTexture(&RM, "C:/Users/Poe/Downloads/powerup_passthrough.png", true, 11);
 
-
+    self->Lives = 3;
+    self->state = GAME_MENU;
     Post_Processor(&Effects, GetShader(&RM, 2), self->width, self->height);
 
 
@@ -98,6 +100,8 @@ void Init(Game* self)
         GetTexture(&RM, 5),
         500
     );
+    init_TextRenderer(&Text, &RM, self->width, self->height);
+    LoadText(&Text,"C:/Users/Poe/Downloads/OCRAEXT.TTF", 24);
 
 }
 
@@ -108,45 +112,93 @@ void Update(Game* self, float dt)
     UpdatePowerUps(self, dt);
     if (ShakeTime > 0.0f)
     {
+        //printf("%i, %i\n", *&ball.inherit.Position[1], self->height);
+
+        
         ShakeTime -= dt;
         if (ShakeTime <= 0.0f)
             Effects.Shake = false;
+    }
+    if (ball.inherit.Position[1] >= self->height) // did ball reach bottom edge?
+    {
+        self->Lives = self->Lives - 1;
+        ResetPlayer(self);
+        //printf("%i\n", self->Lives);
+
+        // did the player lose all his lives? : Game over
+        if (self->Lives == 0)
+        {
+            ResetLevel(self);
+            self->state = GAME_MENU;
+        }
     }
     DoCollisions(self);
 }
 
 void Render(Game* self)
 {
-    Texture2D texture = GetTexture(&RM, 0);
-    Texture2D texture_bg = GetTexture(&RM, 1);
-
-    BeginRender(&Effects);
-
-    DrawSprite(&spriteRenderer, GetTexture(&RM, 1), (vec2) { 0.0f, 0.0f }, (vec2) { self->width, self->height }, 0.0f, (vec3) { 1.0f, 1.0f, 1.0f });
-    Draw(&self->levels[self->level], &spriteRenderer);
-    Draw_Particles(&particles);
-    Draw_GameObject(&Player, &spriteRenderer);
-    Draw_GameObject(&ball, &spriteRenderer);
-    //TODO
-
-    for (unsigned int i = 0; i < 6; i++)
+    if (self->state == GAME_ACTIVE || self->state == GAME_MENU || self->state == GAME_WIN)
     {
-        PowerUp powerUp = self->powerUps[i];
-        // 
-        //if (powerUp != NULL) {
-        if (!powerUp.inherit.Destroyed) {
-            Draw_GameObject(&powerUp, &spriteRenderer);
+        Texture2D texture = GetTexture(&RM, 0);
+        Texture2D texture_bg = GetTexture(&RM, 1);
+        //self->Lives = 3;
+
+        BeginRender(&Effects);
+
+        DrawSprite(&spriteRenderer, GetTexture(&RM, 1), (vec2) { 0.0f, 0.0f }, (vec2) { self->width, self->height }, 0.0f, (vec3) { 1.0f, 1.0f, 1.0f });
+        Draw(&self->levels[self->level], &spriteRenderer);
+        Draw_Particles(&particles);
+        Draw_GameObject(&Player, &spriteRenderer);
+        Draw_GameObject(&ball, &spriteRenderer);
+        //TODO
+
+        for (unsigned int i = 0; i < 6; i++)
+        {
+            PowerUp powerUp = self->powerUps[i];
+            // 
+            //if (powerUp != NULL) {
+            if (!powerUp.inherit.Destroyed) {
+                Draw_GameObject(&powerUp, &spriteRenderer);
+            }
+            //}
+
         }
-        //}
+
+        EndRender(&Effects);
+        RenderPP(&Effects, glfwGetTime());
 
     }
-
-    EndRender(&Effects);
-    RenderPP(&Effects, glfwGetTime());
+    if (self->state == GAME_MENU) {
+        RenderText(&Text, "Press ENTER to start", 250.0f, self->height / 2.0f, 1.0f, (vec3) { 1.0f, 1.0f, 1.0f });
+    }
+    char str[24] = "Lives: ";
+    char lives[33];
+    itoa(self->Lives, lives, 10);
+    strcat(str, lives);
+    RenderText(&Text, str, 5.0f, 5.0f, 1.0f, (vec3) { 1.0f, 1.0f, 1.0f });
+    
 }
 
 void ProcessInput(Game* self, float dt)
 {
+    if (self->state == GAME_MENU)
+    {
+        if (self->keys[GLFW_KEY_ENTER])
+        {
+            self->state = GAME_ACTIVE;
+        }
+        /*if (self->keys[GLFW_KEY_W] )
+        {
+            self->level = (self->level + 1) % 4;
+        }
+        if (self->keys[GLFW_KEY_S] )
+        {
+            if (self->level > 0)
+                --self->level;
+            else
+                self->level = 3;
+        }*/
+    }
     if (self->state == GAME_ACTIVE) {
         float velocity = PLAYER_VELOCITY * dt;
         // move playerboard
@@ -170,6 +222,33 @@ void ProcessInput(Game* self, float dt)
         if (self->keys[GLFW_KEY_SPACE])
             ball.Stuck = false;
     }
+}
+
+void ResetLevel(Game* self)
+{
+    self->Lives = 3;
+    GameLevel level1;
+    Load(&level1, &RM, "null.txt", self->width, self->height / 2);
+    self->levels[0] = level1;
+    self->level = 0;
+}
+
+void ResetPlayer(Game* self)
+{
+
+    Player.Size[0] = PLAYER_SIZE[0];
+    Player.Size[1] = PLAYER_SIZE[1];
+    Player.Position[0] = self->width / 2.0f - PLAYER_SIZE[0] / 2.0f, 
+    Player.Position[1] = self->height - PLAYER_SIZE[1];
+    Reset(&ball, (vec2){ Player.Position[0] + PLAYER_SIZE[0] / 2.0f - BALL_RADIUS, Player.Position[1] - (BALL_RADIUS * 2.0f) }, INITIAL_BALL_VELOCITY);
+    Effects.Chaos = Effects.Confuse = false;
+    ball.PassThrough = ball.Sticky = false;
+    Player.Color[0] = 1.0f;
+    Player.Color[1] = 1.0f;
+    Player.Color[2] = 1.0f;
+    ball.inherit.Color[0] = 1.0f;
+    ball.inherit.Color[1] = 1.0f;
+    ball.inherit.Color[2] = 1.0f;
 }
 
 bool ShouldSpawn(unsigned int chance)
