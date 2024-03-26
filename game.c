@@ -119,18 +119,21 @@ void Update(Game* self, float dt)
         if (ShakeTime <= 0.0f)
             Effects.Shake = false;
     }
+
     if (ball.inherit.Position[1] >= self->height) // did ball reach bottom edge?
     {
         self->Lives = self->Lives - 1;
         ResetPlayer(self);
-        //printf("%i\n", self->Lives);
-
-        // did the player lose all his lives? : Game over
         if (self->Lives == 0)
         {
             ResetLevel(self);
             self->state = GAME_MENU;
         }
+    }
+    if (self->state == GAME_ACTIVE && IsCompleted(&self->levels[self->level])) {
+        ResetPlayer(self);
+        ResetLevel(self);
+        self->state = GAME_WIN;
     }
     DoCollisions(self);
 }
@@ -168,6 +171,18 @@ void Render(Game* self)
         RenderPP(&Effects, glfwGetTime());
 
     }
+    if (self->state == GAME_WIN)
+    {
+        RenderText(&Text,
+            "You WON!!!", 320.0, self->height / 2 - 20.0, 1.0, (vec3){ 0.0, 1.0, 0.0 }
+        );
+        RenderText(&Text,
+            "Press ENTER to retry or ESC to quit", 130.0, self->height / 2, 1.0, (vec3) { 1.0, 1.0, 0.0 }
+        );
+    }
+    
+
+    
     if (self->state == GAME_MENU) {
         RenderText(&Text, "Press ENTER to start", 250.0f, self->height / 2.0f, 1.0f, (vec3) { 1.0f, 1.0f, 1.0f });
     }

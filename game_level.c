@@ -94,3 +94,10 @@ void Draw(GameLevel*self, SpriteRenderer *renderer)
             }
     }
 }
+
+bool IsCompleted(GameLevel* self) {
+    for (unsigned int i = 0; i < 8*15; i++)
+        if (!self->Bricks[i].IsSolid && !self->Bricks[i].Destroyed)
+            return false;
+    return true;
+}
